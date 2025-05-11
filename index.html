@@ -4,9 +4,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>検針アプリ（カードUI版モックアップ）</title>
+  <title>検針アプリ（カードUI版 修正版）</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+
   <style>
     body {
       background: #f8f9fa;
@@ -40,6 +41,7 @@
       background: #ffcccc !important;
     }
 
+    /* サムネイル */
     .img-thumbs {
       display: flex;
       flex-wrap: wrap;
@@ -61,6 +63,16 @@
       /* 削除選択中の強調表示 */
     }
 
+    /* 写真拡大モーダルを最前面にする */
+    #photoZoomModal {
+      z-index: 2050;
+      /* Bootstrap のデフォルト二重モーダルより高めに */
+    }
+
+    #photoZoomModal .modal-backdrop {
+      z-index: 2000 !important;
+    }
+
     #photoZoomModal .modal-content {
       background: rgba(0, 0, 0, 0.8);
       border: none;
@@ -71,13 +83,19 @@
       display: block;
       margin: auto;
     }
+
+    /* Chart.js の親要素にmax-heightを設定して縦長を防ぐ */
+    #chartContainer {
+      max-height: 400px;
+      /* 縦の最大を400px程度に制限 */
+    }
   </style>
 </head>
 
 <body>
 
   <header class="p-3 mb-4">
-    <h1 class="header-title fs-4">検針アプリ（カードUI版モックアップ）</h1>
+    <h1 class="header-title fs-4">検針アプリ（カードUI版 修正版）</h1>
   </header>
 
   <main class="container">
@@ -88,9 +106,7 @@
     </p>
 
     <!-- カードのリスト -->
-    <div class="row" id="metersRow">
-      <!-- JSで生成 -->
-    </div>
+    <div class="row" id="metersRow"></div>
 
     <!-- サーバ送信ボタン -->
     <div class="my-4 text-center">
@@ -111,7 +127,10 @@
           <div class="mb-3">
             <ul id="historyList" class="list-group"></ul>
           </div>
-          <canvas id="usageChart" width="400" height="200"></canvas>
+          <!-- グラフを入れる親にmax-heightを設定 -->
+          <div id="chartContainer">
+            <canvas id="usageChart" width="400"></canvas>
+          </div>
         </div>
         <div class="modal-footer">
           <button class="btn btn-secondary" data-bs-dismiss="modal">閉じる</button>
@@ -120,7 +139,7 @@
     </div>
   </div>
 
-  <!-- 写真拡大表示モーダル -->
+  <!-- 写真拡大表示モーダル（最前面） -->
   <div class="modal fade" id="photoZoomModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
@@ -151,7 +170,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.2.1/dist/chart.umd.min.js"></script>
   <script>
-    // ダミーデータ
+    // サンプルデータを増量(8~10か月分)
     let meters = [
       {
         id: 1,
@@ -164,7 +183,12 @@
         history: [
           { month: "2023-05", value: 1150, usage: 220 },
           { month: "2023-04", value: 900, usage: 250 },
-          { month: "2023-03", value: 650, usage: 220 }
+          { month: "2023-03", value: 650, usage: 220 },
+          { month: "2023-02", value: 430, usage: 220 },
+          { month: "2023-01", value: 210, usage: 220 },
+          { month: "2022-12", value: 50, usage: 160 },
+          { month: "2022-11", value: 30, usage: 20 },
+          { month: "2022-10", value: 0, usage: 0 }
         ]
       },
       {
@@ -177,7 +201,12 @@
         images: [],
         history: [
           { month: "2023-05", value: 1660, usage: 300 },
-          { month: "2023-04", value: 1320, usage: 340 }
+          { month: "2023-04", value: 1320, usage: 340 },
+          { month: "2023-03", value: 980, usage: 340 },
+          { month: "2023-02", value: 680, usage: 300 },
+          { month: "2023-01", value: 380, usage: 300 },
+          { month: "2022-12", value: 200, usage: 180 },
+          { month: "2022-11", value: 100, usage: 100 }
         ]
       },
       {
@@ -190,39 +219,62 @@
         images: [],
         history: [
           { month: "2023-05", value: 14920, usage: 170 },
-          { month: "2023-04", value: 14750, usage: 180 }
+          { month: "2023-04", value: 14750, usage: 180 },
+          { month: "2023-03", value: 14570, usage: 180 },
+          { month: "2023-02", value: 14400, usage: 170 },
+          { month: "2023-01", value: 14200, usage: 200 },
+          { month: "2022-12", value: 14000, usage: 200 },
+          { month: "2022-11", value: 13800, usage: 220 },
+          { month: "2022-10", value: 13600, usage: 200 }
+        ]
+      },
+      {
+        id: 4,
+        name: "電気(サブ)",
+        lastMonthReading: 8000,
+        lastMonthUsage: 150,
+        lastYearUsage: 160,
+        currentReading: null,
+        images: [],
+        history: [
+          { month: "2023-05", value: 7850, usage: 140 },
+          { month: "2023-04", value: 7700, usage: 150 },
+          { month: "2023-03", value: 7500, usage: 200 },
+          { month: "2023-02", value: 7300, usage: 200 },
+          { month: "2023-01", value: 7100, usage: 200 },
+          { month: "2022-12", value: 6900, usage: 200 },
+          { month: "2022-11", value: 6800, usage: 100 },
+          { month: "2022-10", value: 6700, usage: 100 }
         ]
       }
     ];
 
-    // ±X%を超えると警告
     const WARNING_THRESHOLD = 0.2;
     let chartInstance = null;
 
+    // ページ読み込み時
     window.addEventListener('DOMContentLoaded', () => {
       renderMeters();
     });
 
-    // カード生成(レスポンシブ)
+    // ----- カードUI生成 -----
     function renderMeters() {
       const rowEl = document.getElementById('metersRow');
       rowEl.innerHTML = '';
+
       meters.forEach(m => {
-        // カード要素
         const colDiv = document.createElement('div');
         colDiv.classList.add('col-12', 'col-md-6', 'col-lg-4');
-        // ↑スマホ1列、タブレット2列、PC3列
 
-        // カード本体
         const card = document.createElement('div');
-        card.className = 'card card-meter shadow-sm';
+        card.className = 'card card-meter shadow-sm mb-3';
 
-        // カードヘッダ
+        // ヘッダ
         const cardHeader = document.createElement('div');
         cardHeader.className = 'card-header';
         cardHeader.textContent = m.name;
 
-        // カードボディ
+        // ボディ
         const cardBody = document.createElement('div');
         cardBody.className = 'card-body';
 
@@ -233,8 +285,9 @@
       <span class="ms-2">${m.lastMonthReading}</span>
     `;
 
-        // 現在値入力
+        // 現在値
         const group2 = document.createElement('div');
+        group2.className = 'mt-2';
         group2.innerHTML = `
       <label>現在値:</label>
       <input type="number" class="form-control form-control-sm d-inline-block ms-2 currentReading"
@@ -249,7 +302,7 @@
       <span class="ms-2 usageCell"></span>
     `;
 
-        // 前年同月/前月使用量
+        // 前年同月/前月
         const group4 = document.createElement('div');
         group4.className = 'mt-2';
         group4.innerHTML = `
@@ -260,19 +313,19 @@
 
         // 詳細(グラフ)ボタン
         const detailBtn = document.createElement('button');
-        detailBtn.className = 'btn btn-outline-secondary btn-sm me-2 mt-2 detailBtn';
+        detailBtn.className = 'btn btn-outline-secondary btn-sm me-2 mt-3 detailBtn';
         detailBtn.textContent = '詳細';
         detailBtn.dataset.id = m.id;
 
         // 写真ボタン群
         const cameraBtn = document.createElement('button');
-        cameraBtn.className = 'btn btn-sm btn-outline-success me-2 mt-2 photoBtn';
+        cameraBtn.className = 'btn btn-sm btn-outline-success me-2 mt-3 photoBtn';
         cameraBtn.dataset.id = m.id;
         cameraBtn.dataset.mode = 'camera';
         cameraBtn.innerHTML = `<i class="bi bi-camera"></i>`;
 
         const fileBtn = document.createElement('button');
-        fileBtn.className = 'btn btn-sm btn-outline-primary me-2 mt-2 photoBtn';
+        fileBtn.className = 'btn btn-sm btn-outline-primary me-2 mt-3 photoBtn';
         fileBtn.dataset.id = m.id;
         fileBtn.dataset.mode = 'file';
         fileBtn.innerHTML = `<i class="bi bi-image"></i>`;
@@ -281,6 +334,7 @@
         photoCountSpan.className = 'badge bg-secondary align-text-bottom';
         photoCountSpan.textContent = m.images.length;
 
+        // サムネイル領域
         const thumbsDiv = document.createElement('div');
         thumbsDiv.id = `thumbs-${m.id}`;
         thumbsDiv.className = 'img-thumbs';
@@ -291,7 +345,7 @@
         delModeBtn.dataset.id = m.id;
         delModeBtn.textContent = '削除モード';
 
-        // 削除確定 & キャンセル
+        // 選択削除 & キャンセル
         const delConfirmBtn = document.createElement('button');
         delConfirmBtn.className = 'btn btn-sm btn-outline-danger mt-2 me-2 deleteConfirmBtn d-none';
         delConfirmBtn.dataset.id = m.id;
@@ -302,7 +356,7 @@
         delCancelBtn.dataset.id = m.id;
         delCancelBtn.textContent = 'キャンセル';
 
-        // カードに要素追加
+        // カードボディへ追加
         cardBody.appendChild(group1);
         cardBody.appendChild(group2);
         cardBody.appendChild(group3);
@@ -319,10 +373,10 @@
         cardBody.appendChild(delConfirmBtn);
         cardBody.appendChild(delCancelBtn);
 
+        // 組み立て
         card.appendChild(cardHeader);
         card.appendChild(cardBody);
         colDiv.appendChild(card);
-
         rowEl.appendChild(colDiv);
       });
 
@@ -347,13 +401,14 @@
       });
     }
 
-    // ---- イベントハンドラ類 ---- //
+    // --- イベントハンドラ類 ---
 
-    // 現在値入力
+    // 入力
     function onReadingInput(e) {
       const meterId = parseInt(e.target.dataset.id, 10);
       const meter = meters.find(x => x.id === meterId);
       if (!meter) return;
+
       const val = parseInt(e.target.value, 10);
       const usageCell = e.target.closest('.card-body').querySelector('.usageCell');
       if (!isNaN(val)) {
@@ -376,11 +431,12 @@
       }
     }
 
-    // 詳細(過去1年 + グラフ)
+    // 詳細(過去1年)
     function onShowDetail(e) {
       const meterId = parseInt(e.target.dataset.id, 10);
       const meter = meters.find(x => x.id === meterId);
       if (!meter) return;
+
       const historyUl = document.getElementById('historyList');
       historyUl.innerHTML = '';
       meter.history.forEach(h => {
@@ -389,18 +445,21 @@
         li.innerHTML = `<span>${h.month}</span><span>${h.value} (使用量:${h.usage})</span>`;
         historyUl.appendChild(li);
       });
+
       // グラフ
-      const usageData = meter.history.map(h => h.usage);
-      const labels = meter.history.map(h => h.month);
-      const maxVal = Math.max(...usageData);
+      let usageData = meter.history.map(h => h.usage);
+      let labels = meter.history.map(h => h.month);
+      let maxVal = Math.max(...usageData);
       drawUsageChart(labels, usageData, maxVal);
+
       new bootstrap.Modal(document.getElementById('detailModal')).show();
     }
 
-    // Chart.js
+    // Chart.js (棒グラフ)
     function drawUsageChart(labels, data, maxVal) {
       const ctx = document.getElementById('usageChart').getContext('2d');
       if (chartInstance) chartInstance.destroy();
+
       chartInstance = new Chart(ctx, {
         type: 'bar',
         data: {
@@ -413,7 +472,8 @@
         },
         options: {
           responsive: true,
-          maintainAspectRatio: false,
+          maintainAspectRatio: true,
+          aspectRatio: 2, // 幅:高さ = 2:1
           scales: {
             y: {
               beginAtZero: true,
@@ -429,6 +489,7 @@
       const meterId = parseInt(e.target.dataset.id, 10);
       const meter = meters.find(x => x.id === meterId);
       if (!meter) return;
+
       const mode = e.target.dataset.mode;
       const input = document.createElement('input');
       input.type = 'file';
@@ -454,9 +515,12 @@
     function renderThumbnails(meterId) {
       const meter = meters.find(x => x.id === meterId);
       if (!meter) return;
+
       const thumbsDiv = document.getElementById(`thumbs-${meterId}`);
       if (!thumbsDiv) return;
       thumbsDiv.innerHTML = '';
+
+      // 枚数バッジ更新
       const cardBody = thumbsDiv.closest('.card-body');
       cardBody.querySelector('.badge.bg-secondary').textContent = meter.images.length;
 
@@ -470,10 +534,11 @@
       });
     }
 
-    // サムネイルクリック(拡大 or 削除選択)
+    // サムネイルクリック(拡大 or 削除)
     function onThumbClick(e, meterId) {
       const meter = meters.find(x => x.id === meterId);
       if (!meter) return;
+
       const cardBody = e.target.closest('.card-body');
       const delConfirmBtn = cardBody.querySelector('.deleteConfirmBtn');
       const isDeleteMode = !delConfirmBtn.classList.contains('d-none');
@@ -485,7 +550,7 @@
         // 削除選択toggle
         imgElm.classList.toggle('delete-select');
       } else {
-        // 拡大表示
+        // 拡大
         const zoomModal = new bootstrap.Modal(document.getElementById('photoZoomModal'));
         const zoomedPhoto = document.getElementById('zoomedPhoto');
         zoomedPhoto.src = meter.images[idx];
@@ -493,19 +558,18 @@
       }
     }
 
-    // 削除モードON/OFF
+    // 削除モード切替
     function onToggleDeleteMode(e) {
-      const meterId = parseInt(e.target.dataset.id, 10);
       const cardBody = e.target.closest('.card-body');
       const delConfirmBtn = cardBody.querySelector('.deleteConfirmBtn');
       const delCancelBtn = cardBody.querySelector('.deleteCancelBtn');
 
       if (delConfirmBtn.classList.contains('d-none')) {
-        // 削除モードON
+        // ON
         delConfirmBtn.classList.remove('d-none');
         delCancelBtn.classList.remove('d-none');
       } else {
-        // 削除モードOFF
+        // OFF
         delConfirmBtn.classList.add('d-none');
         delCancelBtn.classList.add('d-none');
         cardBody.querySelectorAll('.img-thumb.delete-select')
@@ -518,67 +582,72 @@
       const meterId = parseInt(e.target.dataset.id, 10);
       const meter = meters.find(x => x.id === meterId);
       if (!meter) return;
+
       const cardBody = e.target.closest('.card-body');
       const selectedImgs = cardBody.querySelectorAll('.img-thumb.delete-select');
       const srcs = Array.from(selectedImgs).map(img => img.src);
+
       meter.images = meter.images.filter(url => !srcs.includes(url));
 
-      // 削除モードOFF
+      // OFF
       onToggleDeleteMode(e);
-      // 再描画
       renderThumbnails(meterId);
     }
 
-    // 削除キャンセル
+    // キャンセル
     function onDeleteCancel(e) {
       onToggleDeleteMode(e);
     }
 
-    // サーバ送信ボタン(ダミー)
+    // サーバ送信(ダミー)
     document.getElementById('sendBtn').addEventListener('click', () => {
-      const output = document.getElementById('sendOutput');
-      output.innerHTML = '';
+      const out = document.getElementById('sendOutput');
+      out.innerHTML = '';
 
       meters.forEach(m => {
         let usage = null;
         if (m.currentReading !== null && m.currentReading >= m.lastMonthReading) {
           usage = m.currentReading - m.lastMonthReading;
         }
-        // メータ情報
-        let div = document.createElement('div');
-        div.className = 'border rounded p-2 mb-3';
+        let wrap = document.createElement('div');
+        wrap.className = 'border rounded p-2 mb-3';
 
-        // メータ名や値
+        // メータ情報
         let info = document.createElement('div');
         info.innerHTML = `
       <strong>${m.name}</strong><br>
-      前月値:${m.lastMonthReading}, 現在値:${m.currentReading ?? '-'}, 使用量:${usage ?? '-'}
+      前月値: ${m.lastMonthReading}, 現在値: ${m.currentReading ?? '-'}, 使用量: ${usage ?? '-'}
     `;
-        div.appendChild(info);
+        wrap.appendChild(info);
 
-        // サムネイル表示
-        let thumbsDiv = document.createElement('div');
-        thumbsDiv.className = 'd-flex flex-wrap mt-2';
-        m.images.forEach((imgUrl, idx) => {
-          let img = document.createElement('img');
-          img.src = imgUrl;
-          img.className = 'img-thumb me-2';
-          img.style.width = '50px';
-          img.style.height = '50px';
-          img.dataset.meterid = m.id;
-          img.dataset.idx = idx;
-          // 拡大表示
-          img.onclick = () => {
-            const zoomModal = new bootstrap.Modal(document.getElementById('photoZoomModal'));
-            const zoomedPhoto = document.getElementById('zoomedPhoto');
-            zoomedPhoto.src = imgUrl;
-            zoomModal.show();
-          };
-          thumbsDiv.appendChild(img);
-        });
-        div.appendChild(thumbsDiv);
+        // サムネイル
+        if (m.images.length > 0) {
+          let thumbsDiv = document.createElement('div');
+          thumbsDiv.className = 'd-flex flex-wrap mt-2';
+          m.images.forEach((imgUrl, idx) => {
+            let img = document.createElement('img');
+            img.src = imgUrl;
+            img.className = 'img-thumb me-2';
+            img.style.width = '50px';
+            img.style.height = '50px';
+            // 拡大
+            img.onclick = () => {
+              const zoomModal = new bootstrap.Modal(document.getElementById('photoZoomModal'));
+              const zoomedPhoto = document.getElementById('zoomedPhoto');
+              zoomedPhoto.src = imgUrl;
+              zoomModal.show();
+            };
+            thumbsDiv.appendChild(img);
+          });
+          wrap.appendChild(thumbsDiv);
+        } else {
+          let noimg = document.createElement('div');
+          noimg.className = 'text-muted small mt-2';
+          noimg.textContent = '(写真なし)';
+          wrap.appendChild(noimg);
+        }
 
-        output.appendChild(div);
+        out.appendChild(wrap);
       });
 
       new bootstrap.Modal(document.getElementById('sendResultModal')).show();
