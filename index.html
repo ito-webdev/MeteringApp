@@ -486,11 +486,12 @@
 
     // 撮影/選択
     function onPhotoCapture(e) {
-      const meterId = parseInt(e.target.dataset.id, 10);
+      const btn = e.currentTarget;
+      const meterId = parseInt(btn.dataset.id, 10);
       const meter = meters.find(x => x.id === meterId);
       if (!meter) return;
 
-      const mode = e.target.dataset.mode;
+      const mode = btn.dataset.mode;
       const input = document.createElement('input');
       input.type = 'file';
       input.accept = 'image/*';
