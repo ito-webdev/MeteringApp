@@ -1,0 +1,59 @@
+.card-meter {
+  margin-bottom: 1rem;
+}
+
+.card-body label {
+  font-weight: 500;
+  margin-top: 6px;
+}
+
+input[type="number"] {
+  max-width: 150px;
+}
+
+.usage-warning {
+  background: #ffcccc !important;
+}
+
+.img-thumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.img-thumb {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 4px;
+  border: 2px solid transparent;
+  cursor: pointer;
+}
+
+.img-thumb.delete-select {
+  border-color: red;
+}
+
+#photoZoomModal {
+  z-index: 2050;
+}
+
+#photoZoomModal .modal-backdrop {
+  z-index: 2000 !important;
+}
+
+#photoZoomModal .modal-content {
+  background: rgba(0, 0, 0, 0.8);
+  border: none;
+}
+
+#zoomedPhoto {
+  max-width: 100%;
+  display: block;
+  margin: auto;
+}
+
+#chartContainer {
+  max-height: 400px;
+}

@@ -1,0 +1,14 @@
+body {
+  background: #f8f9fa;
+  font-size: 1rem;
+}
+
+header {
+  background: #343a40;
+  color: #fff;
+}
+
+.header-title {
+  font-weight: 300;
+  letter-spacing: 0.05em;
+}
